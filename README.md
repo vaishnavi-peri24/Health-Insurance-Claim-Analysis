@@ -1,3 +1,4 @@
+![header](https://capsule-render.vercel.app/api?type=waving&height=300&color=gradient&text=Healthcare%20Insurance%20Claim%20Analysis&fontColor=967BB6&descAlign=50&fontSize=50)
 # Insurance Claim Fraud Detection
 
 This project analyzes and predicts fraudulent insurance claims using a real-world dataset. It includes data cleaning, exploratory data analysis (EDA), feature engineering, and machine learning modeling.
@@ -141,3 +142,5 @@ The dataset contains columns such as:
 ## License
 
 This project is for educational purposes.
+
+![footer](https://capsule-render.vercel.app/api?type=waving&height=300&color=gradient&text=%20%20©%202025%20Vaishnavi%20Peri%20&copy;&fontColor=967BB6&descAlign=50&fontSize=50&section=footer&desc=MIT%20License)
