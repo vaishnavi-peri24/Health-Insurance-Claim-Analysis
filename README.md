@@ -4,6 +4,20 @@ This project analyzes and predicts fraudulent insurance claims using a real-worl
 
 ---
 
+## How to Contribute
+
+We welcome contributions to improve this project! If you would like to contribute:
+
+1. Fork the repository.
+2. Create a new branch for your feature or bugfix.
+3. Make your changes and add tests if applicable.
+4. Commit your changes with clear messages.
+5. Open a pull request describing your changes.
+
+For major changes, please open an issue first to discuss what you would like to change.
+
+---
+
 ## Project Structure
 
 - `Claim_insurance project`: Main Python analysis and modeling script
