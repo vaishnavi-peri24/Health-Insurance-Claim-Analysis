@@ -1,0 +1,82 @@
+# Import necessary libraries
+# Basic
+import pandas as pd
+import numpy as np
+
+# Visualization
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Modeling
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score, roc_curve, precision_recall_curve
+import xgboost as xgb
+
+# Explainability
+import shap
+
+# Load dataset
+df = pd.read_csv('insurance_claims.csv')
+print("Shape:", df.shape)
+df.head()
+
+#Basic Data Cleaning
+# Drop useless column
+df = df.drop(columns=["_c39"], errors="ignore")
+
+# Handle missing values
+df = df.dropna(subset=["fraud_reported"])   # fraud_reported must exist
+
+# Fill missing text-like columns with "Unknown"
+for col in df.select_dtypes(include="object"):
+    df[col] = df[col].fillna("Unknown")
+
+# Reset index
+df = df.reset_index(drop=True)
+
+# Generate Synthetic description Column (for NLP)
+def make_desc(row):
+    parts = []
+    if pd.notna(row.get("incident_type")):
+        parts.append(f"Incident type: {row['incident_type']}")
+    if pd.notna(row.get("incident_severity")):
+        parts.append(f"Severity: {row['incident_severity']}")
+    if pd.notna(row.get("collision_type")):
+        parts.append(f"Collision: {row['collision_type']}")
+    if pd.notna(row.get("authorities_contacted")):
+        parts.append(f"Authorities: {row['authorities_contacted']}")
+    if pd.notna(row.get("total_claim_amount")):
+        parts.append(f"Claim amount: ${row['total_claim_amount']}")
+    return ". ".join(parts)
+
+df["description"] = df.apply(make_desc, axis=1)
+df[["incident_type", "incident_severity", "collision_type", "description"]].head(10)
+
+# Exploratory Data Analysis (EDA)
+# Fraud distribution
+sns.countplot(x="fraud_reported", data=df)
+plt.title("Fraud Distribution")
+plt.show()
+
+# Incident type vs fraud
+plt.figure(figsize=(8,4))
+sns.countplot(x="incident_type", hue="fraud_reported", data=df)
+plt.title("Incident Type vs Fraud")
+plt.xticks(rotation=45)
+plt.show()
+
+# Claim amount distribution by fraud
+plt.figure(figsize=(6,4))
+sns.boxplot(x="fraud_reported", y="total_claim_amount", data=df)
+plt.title("Claim Amount Distribution by Fraud")
+plt.show()
+
+# Train-test split the data
+X = df.drop(columns=["fraud_reported"])
+y = df["fraud_reported"].map({"Y":1, "N":0})  # convert to 0/1
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
