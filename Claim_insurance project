@@ -80,3 +80,81 @@ X = df.drop(columns=["fraud_reported"])
 y = df["fraud_reported"].map({"Y":1, "N":0})  # convert to 0/1
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+
+#Preprocessing + Model Pipeline
+# Select feature groups
+numeric_features = ["months_as_customer", "policy_deductable", "policy_annual_premium", "umbrella_limit", "total_claim_amount", "injury_claim", "property_claim", "vehicle_claim"]
+categorical_features = ["policy_state", "policy_csl", "incident_type", "incident_severity", "collision_type", "authorities_contacted", "property_damage", "police_report_available", "auto_make", "auto_model"]
+text_feature = "description"
+
+# Preprocessors
+numeric_transformer = StandardScaler()
+categorical_transformer = OneHotEncoder(handle_unknown="ignore")
+text_transformer = TfidfVectorizer(max_features=500)
+
+# Combine
+preprocessor = ColumnTransformer(
+    transformers=[
+        ("num", numeric_transformer, numeric_features),
+        ("cat", categorical_transformer, categorical_features),
+        ("text", text_transformer, text_feature)
+    ]
+)
+
+# XGBoost classifier
+model = xgb.XGBClassifier(use_label_encoder=False, eval_metric="logloss")
+
+# Pipeline
+clf = Pipeline(steps=[("preprocessor", preprocessor),
+                      ("classifier", model)])
+
+# Train the model
+clf.fit(X_train, y_train)
+
+# Model Evaluation
+y_pred = clf.predict(X_test)
+y_prob = clf.predict_proba(X_test)[:,1]
+
+print("Classification Report:\n", classification_report(y_test, y_pred))
+print("ROC AUC:", roc_auc_score(y_test, y_prob))
+
+# Confusion matrix
+cm = confusion_matrix(y_test, y_pred)
+sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["No Fraud","Fraud"], yticklabels=["No Fraud","Fraud"])
+plt.title("Confusion Matrix")
+plt.show()
+
+# ROC curve
+fpr, tpr, _ = roc_curve(y_test, y_prob)
+plt.plot(fpr, tpr, label="ROC Curve")
+plt.plot([0,1],[0,1],"--")
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate")
+plt.legend()
+plt.title("ROC Curve")
+plt.show()
+
+# Precision-Recall curve
+prec, rec, _ = precision_recall_curve(y_test, y_prob)
+plt.plot(rec, prec)
+plt.xlabel("Recall")
+plt.ylabel("Precision")
+plt.title("Precision-Recall Curve")
+plt.show()
+
+# Model Explainability with SHAP
+# Extract trained XGBoost model inside pipeline
+xgb_model = clf.named_steps["classifier"]
+
+# Build SHAP explainer
+explainer = shap.TreeExplainer(xgb_model)
+X_transformed = clf.named_steps["preprocessor"].transform(X_test)
+
+# SHAP values
+shap_values = explainer.shap_values(X_transformed)
+
+# Summary plot
+shap.summary_plot(shap_values, X_transformed, show=False)
+plt.show()
+
+
